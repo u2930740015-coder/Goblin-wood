@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Goblin Wood - NYC & Rain Forest V18.2</title>
+    <style>
+        /* PODSTAWOWE STYLE NYC NIGHT */
+        body { 
+            background-color: #02040a; 
+            color: #00f2ff; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 20px; 
+            user-select: none;
+            background-image: radial-gradient(circle at center, #0a1128 0%, #02040a 100%);
+            transition: all 0.8s ease;
+        }
+
+        /* DYNAMICZNY MOTYW LASU (LEVEL 4) */
+        body.forest-theme {
+            background-color: #0a0f0a;
+            color: #a5d6a7;
+            background-image: radial-gradient(circle at center, #1b2e1b 0%, #0a0f0a 100%);
+        }
+
+        /* MOTYW KOSMICZNA OTCHŁAŃ (LEVEL 5) */
+        body.void-theme {
+            background-color: #020205;
+            color: #b388ff;
+            /* Efekt gwieździstego nieba z mgławicą */
+            background-image: 
+                radial-gradient(circle at 20% 30%, rgba(103, 58, 183, 0.2) 0%, transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(0, 188, 212, 0.15) 0%, transparent 40%),
+                radial-gradient(1px 1px at 10% 10%, #fff, transparent),
+                radial-gradient(1px 1px at 25% 45%, #fff, transparent),
+                radial-gradient(2px 2px at 60% 20%, #fff, transparent),
+                radial-gradient(1px 1px at 85% 85%, #fff, transparent),
+                radial-gradient(1.5px 1.5px at 50% 50%, #fff, transparent);
+            background-attachment: fixed;
+        }
+        
+        .forest-theme .ui-panel { background: rgba(20, 30, 20, 0.9); border-color: #2e7d32; box-shadow: 0 0 20px rgba(46, 125, 50, 0.3); }
+        .forest-theme #game-grid { background-color: #1a1f1a; border-color: #2e7d32; }
+        .forest-theme .rock { background-color: #3e2723; border-color: #5d4037; box-shadow: inset 0 0 10px #000; color: #ffcc00; }
+        .forest-theme #level-panel { border-color: #4caf50; box-shadow: 0 0 20px rgba(76, 175, 80, 0.4); }
+        .forest-theme .level-text { color: #81c784; text-shadow: 0 0 10px #1b5e20; }
+        .forest-theme #workshop-panel { border-color: #4caf50; }
+        .forest-theme .workshop-title { color: #81c784; text-shadow: 0 0 5px #1b5e20; }
+
+        /* DETALE DLA POZIOMU 5 */
+        .void-theme .ui-panel { background: rgba(10, 5, 20, 0.9); border-color: #7e57c2; box-shadow: 0 0 25px rgba(126, 87, 194, 0.4); }
+        .void-theme #game-grid { background-color: rgba(5, 5, 15, 0.8); border-color: #7e57c2; }
+        .void-theme .level-text { color: #b388ff; text-shadow: 0 0 15px #7e57c2; }
+        .void-theme .rock { background-color: #1a1a2e; border-color: #9575cd; color: #e1bee7; box-shadow: inset 0 0 12px #4527a0; }
+        .void-theme #workshop-panel { border-color: #7e57c2; background: #0a0a1a; }
+        .void-theme .workshop-title { color: #b388ff; text-shadow: 0 0 8px #7e57c2; }
+
+        /* RESZTA STYLI */
+        #main-wrapper { display: flex; align-items: flex-start; gap: 20px; }
+        #level-panel { background: #000; border: 2px solid #00f2ff; border-radius: 8px; padding: 20px 10px; writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px rgba(0, 242, 255, 0.4); }
+        .level-text { font-size: 1.5rem; font-weight: bold; color: #00f2ff; text-shadow: 0 0 10px #00f2ff; letter-spacing: 5px; }
+        
+        #game-grid { 
+            display: grid; 
+            grid-template-columns: repeat(5, 65px); 
+            grid-auto-rows: 55px; 
+            gap: 4px; 
+            background-color: #0a0f1e; 
+            padding: 8px; 
+            border: 2px solid #1a237e; 
+            border-radius: 8px; 
+            box-shadow: 0 0 30px rgba(0,0,0,0.5); 
+        }
+
+        .cell { width: 65px; height: 55px; display: flex; justify-content: center; align-items: center; font-weight: bold; border-radius: 2px; cursor: pointer; position: relative; overflow: hidden; flex-direction: column; transition: all 0.3s; }
+        .empty { background-color: #050810; border: 1px solid #111; }
+        .empty.inaccessible { opacity: 0.3; cursor: not-allowed; } 
+        .rock { background-color: #1a1a2e; color: #fff; border: 1px solid #00f2ff; box-shadow: inset 0 0 5px #00f2ff; animation: neon-flicker 4s infinite; }
+        @keyframes neon-flicker { 0%, 18%, 22%, 25%, 53%, 57%, 100% { opacity: 1; } 20%, 24%, 55% { opacity: 0.7; box-shadow: none; } }
+        .rock-lvl-6 { border-color: #ff00ff !important; color: #ff00ff !important; box-shadow: inset 0 0 8px #ff00ff !important; }
+        .rock-lvl-7 { border-color: #ffff00 !important; color: #ffff00 !important; box-shadow: inset 0 0 8px #ffff00 !important; }
+        .rock-lvl-8 { border-color: #ff3d00 !important; color: #ff3d00 !important; box-shadow: 0 0 15px #ff3d00 !important; }
+        .rock-lvl-10 { border-color: #00ff41 !important; color: #00ff41 !important; box-shadow: 0 0 20px #00ff41 !important; }
+        .rock-amethyst { background-color: #2a0033; color: #e040fb; border: 2px solid #aa00ff; box-shadow: 0 0 10px #aa00ff; }
+        .loot-amethyst { background-color: #e040fb; color: #fff; animation: pulse 0.6s infinite alternate; box-shadow: 0 0 15px #e040fb; }
+        .loot-cell { background-color: #00ff41; color: #000; font-size: 1.2rem; animation: pulse 1s infinite; box-shadow: 0 0 15px #00ff41; }
+        .gate-cell { background-color: #1a1a1a; color: #ff5252; border: 2px solid #ff5252; font-size: 0.7rem; text-align: center; }
+        .workshop-timer-bg { width: 100%; height: 8px; background: #111; border-radius: 4px; margin: 10px 0; overflow: hidden; border: 1px solid #333; }
+        #workshop-progress { width: 0%; height: 100%; background: #ffd700; transition: width 0.1s linear; }
+        .workshop-btn { background: #ffd700; color: black; border: none; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; width: 100%; font-weight: bold; }
+        #buy-btn { background: #00f2ff; color: #000; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .mining-bar { position: absolute; bottom: 0; left: 0; height: 5px; background: #00ff41; z-index: 2; box-shadow: 0 0 5px #00ff41; }
+        .goblin { background-color: #00ff41; width: 52px; height: 42px; border-radius: 4px; display: flex; justify-content: center; align-items: center; position: relative; box-shadow: 0 0 15px #00ff41; color: #000; }
+        .ui-panel { margin-bottom: 20px; text-align: center; background: rgba(10, 15, 30, 0.9); padding: 15px; border-radius: 10px; border: 1px solid #00f2ff; width: 340px; }
+        .stat { color: #fff; font-size: 1.2rem; text-shadow: 0 0 5px #00f2ff; }
+        .selected { outline: 3px solid #fff; box-shadow: 0 0 20px #fff; }
+        .wheel-btn { background: #ff00ff; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; min-width: 160px; }
+        #wheel-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100; justify-content: center; align-items: center; flex-direction: column; }
+        #workshop-panel { width: 150px; background: #000; border: 2px solid #ffd700; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; align-items: center; }
+        .workshop-title { color: #ffd700; text-shadow: 0 0 5px #ffd700; }
+        @keyframes pulse { 0% { opacity: 0.6; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body onload="checkNightMode()">
+
+    <div class="ui-panel">
+        <div class="stat"><span id="coin-icon">💵</span> <span id="coin-count">1000</span> | <span id="ameth-icon">💠</span> <span id="amethyst-count">0</span></div>
+        <div id="income-info" style="color: #00ff41; font-size: 0.8rem; margin: 5px 0;">Zysk: 0 / 10s</div>
+        <div style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+            <button id="buy-btn" onclick="buyGoblin()">Zatrudnij Agenta</button>
+            <button id="amethyst-spell-btn" onclick="toggleAmethystSpell()" style="background: #ff00ff; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold;">Haker (15💠)</button>
+            <button id="open-wheel-btn" class="wheel-btn" onclick="openWheel()">🎡 Kasyno</button>
+            <button id="next-level-btn" onclick="goToLevel2()">4 RAIN FOREST ➡️</button>
+        </div>
+    </div>
+
+    <div id="main-wrapper">
+        <div id="level-panel"><div class="level-text" id="level-display">3 NEW YORK</div></div>
+        <div id="game-grid"></div>
+        <div id="workshop-panel">
+            <div class="workshop-title" id="workshop-label">🏢 BANK</div>
+            <div id="workshop-info" style="font-size: 0.7rem; text-align: center; margin-bottom: 5px; color:#fff;"></div>
+            <div class="workshop-timer-bg"><div id="workshop-progress"></div></div>
+            <button id="workshop-upg-btn" class="workshop-btn" onclick="upgradeWorkshop()">Inwestuj</button>
+        </div>
+    </div>
+
+    <div id="wheel-modal">
+        <div id="wheel-wrapper" style="position: relative; width: 340px; height: 340px; margin-bottom: 20px;">
+            <div id="pointer" style="position: absolute; top: -20px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-top: 40px solid #00f2ff; z-index: 120;"></div>
+            <div id="wheel-container" style="width: 100%; height: 100%; border: 5px solid #fff; border-radius: 50%; overflow: hidden; transition: transform 4s cubic-bezier(0.15, 0, 0.15, 1);"><canvas id="wheel-canvas" width="340" height="340"></canvas></div>
+        </div>
+        <button id="spin-button" class="wheel-btn" onclick="spinWheel()">GRAJ!</button>
+        <button onclick="closeWheel()" style="margin-top: 20px; background: #222; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;">Wyjdź</button>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'goblinWood_Final_V18.2_Stable';
+        const WHEEL_TIME_KEY = 'wheelTime_V17.0_Stable';
+        const WHEEL_COOLDOWN = 10800000;
+
+        let coins = 1000, amethysts = 0, goblins = [], goblinsPurchasedCount = 0;
+        let selectedIdx = null, isFactoryDestroyed = false, factoryLevel = 0, factoryTimer = 0;
+        let isFactoryReady = false, currentLevel = 1; 
+        let cellHP = {}, lootMap = {}, isAmethystTargeting = false, isSpinning = false;
+        let workshopLevel = 0, workshopTimer = 0;
+
+        const rockMaxHP = { 1: 15, 2: 40, 3: 80, 4: 130, 5: 180, 6: 480, 7: 900, 8: 1800, 9: 3000, 10: 5000, 11: 8500, "F": 300, "GATE1": 40, "GATE2": 150, "GATE3": 500 }; 
+
+        const layoutLevel1 = [
+            [0,0,0,0,0], [10,3,11,7,["A",5]], [["A",10],7,10,8,8], [7,["A",10],10,9,11], ["B",6,11,7,6], 
+            [1,4,6,10,["A",5]], [11,10,8,6,10], [9,"B",1,3,"B"], [9,9,"B",11,1], [11,["A",9],4,9,7],
+            [["A",2],4,"B",1,5], [4,1,6,0,["A",9]], ["GATE","GATE","GATE","GATE","GATE"]
+        ];
+
+        let levelLayout = JSON.parse(JSON.stringify(layoutLevel1));
+
+        function checkNightMode() { console.log("Hey, remember that the user chose night mode!"); }
+
+        function isCellAccessible(r, c) {
+            if (r <= 1) return true;
+            const neighbors = [[r-1, c], [r+1, c], [r, c-1], [r, c+1]];
+            return neighbors.some(([nr, nc]) => nr >= 0 && nr < levelLayout.length && nc >= 0 && nc < 5 && levelLayout[nr][nc] === 0);
+        }
+
+        function updateVisuals() {
+            const body = document.body;
+            const lvlDisp = document.getElementById('level-display');
+            const workLabel = document.getElementById('workshop-label');
+            
+            body.classList.remove('forest-theme', 'void-theme');
+            
+            if (currentLevel === 1) {
+                lvlDisp.innerText = "3 NEW YORK";
+                workLabel.innerText = "🏢 BANK";
+            } else if (currentLevel === 2) {
+                body.classList.add('forest-theme');
+                lvlDisp.innerText = "4 RAIN FOREST";
+                workLabel.innerText = "🏕️ WARSZTAT";
+            } else if (currentLevel === 3) {
+                body.classList.add('void-theme');
+                lvlDisp.innerText = "5 SPACE VOID";
+                workLabel.innerText = "🛸 STACJA";
+            }
+        }
+
+        /* FUNKCJE NAWIGACJI */
+        function goToLevel1() { currentLevel = 1; levelLayout = JSON.parse(JSON.stringify(layoutLevel1)); resetLevelState(); }
+        
+        function goToLevel2() {
+            console.log("Hey, browser, make another row in the table!");
+            currentLevel = 2; 
+            levelLayout = [
+                [0,0,0,0,0], [4,1,0,10,10], [6,2,4,["A",4],8], [5,6,"F",6,5], [4,["A",8],0,["A",8],4], [7,7,"F",7,7], 
+                [9,3,0,1,5], ["GATE","GATE","GATE","GATE","GATE"]
+            ];
+            resetLevelState();
+        }
+
+        function goToLevel3() {
+            console.log("Hey, browser, make another row in the table!");
+            currentLevel = 3; 
+            levelLayout = [
+                [0, 0, 0, 0, 0], [10, 11, ["A",10], 11, 10], [6, ["A", 9], 3, 9, 6], [11, 8, 0, "B", ["A", 4]], 
+                [6, 4, 6, 2, 5], ["GATE", "GATE", "GATE", "GATE", "GATE"]
+            ];
+            // AKTUALIZACJA MOCY BRAMY NA POZIOMIE 5 (USTAWIONO NA 5):
+            levelLayout[levelLayout.length-1] = ["GATE","GATE","GATE","GATE","GATE"].map(() => "GATE");
+            resetLevelState();
+        }
+
+        function resetLevelState() {
+            coins = 1000; amethysts = Math.max(amethysts, currentLevel * 10);
+            goblins = []; goblinsPurchasedCount = 0; workshopLevel = 0;
+            isFactoryDestroyed = false; cellHP = {}; lootMap = {};
+            updateVisuals(); saveGame(); render();
+        }
+
+        function getMiningDamage(p, cell) {
+            let baseDmg = { 1: 1, 2: 2.5, 3: 4, 4: 8, 5: 15, 6: 25, 7: 35, 8: 50, 9: 75, 10: 100, 11: 140 }[p] || (p > 11 ? 200 : 1);
+            if (cell === "GATE") baseDmg = baseDmg / 4;
+            return Array.isArray(cell) ? (baseDmg / 3) : baseDmg;
+        }
+
+        function getGoblinCost() { return 100 * Math.pow(2, goblinsPurchasedCount); }
+        function getWorkshopIncome() { return Math.floor(13 * Math.pow(1.15, workshopLevel)); }
+        function getWorkshopCost() { return Math.floor(30 * Math.pow(1.26, workshopLevel)); }
+        function getFactoryIncome() { return Math.floor(90 * Math.pow(1.102, factoryLevel)); }
+
+        function saveGame() { localStorage.setItem(STORAGE_KEY, JSON.stringify({ coins, amethysts, goblins, goblinsPurchasedCount, isFactoryDestroyed, factoryLevel, layout: levelLayout, cellHP, lootMap, workshopLevel, currentLevel })); }
+        function loadGame() { 
+            const saved = localStorage.getItem(STORAGE_KEY); 
+            if (saved) { 
+                const d = JSON.parse(saved); 
+                coins = d.coins; amethysts = d.amethysts; goblins = d.goblins; 
+                goblinsPurchasedCount = d.goblinsPurchasedCount; isFactoryDestroyed = d.isFactoryDestroyed; 
+                factoryLevel = d.factoryLevel; cellHP = d.cellHP; lootMap = d.lootMap; 
+                workshopLevel = d.workshopLevel; currentLevel = d.currentLevel || 1; 
+                levelLayout = d.layout; updateVisuals(); 
+            } 
+        }
+
+        function handleCellClick(r, c) { 
+            const cell = levelLayout[r][c]; 
+            if (cell === "LOOT") { collectLoot(r, c); return; } 
+            if (cell === "LOOT_A") { collectAmethyst(r, c); return; } 
+            if (cell === "FR_PROD") { collectFactoryProfit(); return; } 
+            if (isAmethystTargeting && (typeof cell === 'number' && cell > 0 || Array.isArray(cell))) { 
+                amethysts -= 15; 
+                if(Array.isArray(cell)){ if(levelLayout[r][c][1] > 1) levelLayout[r][c][1]--; else levelLayout[r][c] = 0; } 
+                else { levelLayout[r][c] = Math.max(0, cell - 1); } 
+                delete cellHP[`${r},${c}`]; isAmethystTargeting = false; saveGame(); render(); return; 
+            } 
+            const gIdx = goblins.findIndex(g => g.r === r && g.c === c); 
+            if (gIdx !== -1) { 
+                if (selectedIdx === gIdx) selectedIdx = null; 
+                else if (selectedIdx !== null && goblins[selectedIdx].power === goblins[gIdx].power && selectedIdx !== gIdx) { 
+                    goblins[gIdx].power++; goblins.splice(selectedIdx, 1); selectedIdx = null; saveGame(); 
+                } else selectedIdx = gIdx; 
+                render(); return; 
+            } 
+            if (selectedIdx !== null) { 
+                const gob = goblins[selectedIdx]; 
+                if (cell === 0 && isCellAccessible(r,c)) { if (!goblins.some(g => g.r === r && g.c === c)) { gob.r = r; gob.c = c; gob.target = null; selectedIdx = null; } } 
+                else if ((cell === "F" || cell === "GATE" || (typeof cell === 'number' && cell > 0) || Array.isArray(cell)) && (Math.abs(gob.r - r) + Math.abs(gob.c - c) === 1)) { gob.target = { r, c }; selectedIdx = null; } 
+                saveGame(); render(); 
+            } 
+        }
+
+        function render() {
+            document.getElementById('coin-count').innerText = Math.floor(coins); document.getElementById('amethyst-count').innerText = amethysts;
+            document.getElementById('buy-btn').innerText = `Zatrudnij (${getGoblinCost()})`;
+            document.getElementById('workshop-info').innerHTML = `Zysk: +${getWorkshopIncome()} / 5s<br>Lvl: ${workshopLevel}`;
+            document.getElementById('workshop-upg-btn').innerText = `Inwestuj (${getWorkshopCost()}💰)`;
+            const isGateGone = !levelLayout[levelLayout.length-1].some(cell => cell === "GATE");
+            const nextBtn = document.getElementById('next-level-btn');
+            if (isGateGone) {
+                nextBtn.style.display = 'block';
+                if (currentLevel === 1) { nextBtn.innerText = "4 RAIN FOREST ➡️"; nextBtn.onclick = goToLevel2; }
+                else if (currentLevel === 2) { nextBtn.innerText = "5 SPACE VOID ➡️"; nextBtn.onclick = goToLevel3; }
+                else nextBtn.style.display = 'none';
+            } else nextBtn.style.display = 'none';
+            const inc = isFactoryDestroyed ? getFactoryIncome() : 0; document.getElementById('income-info').innerText = `Zysk: ${inc} / 10s`;
+            const grid = document.getElementById('game-grid'); grid.innerHTML = '';
+            levelLayout.forEach((row, r) => { row.forEach((cell, c) => {
+                const div = document.createElement('div'); div.className = 'cell'; div.onclick = () => handleCellClick(r, c);
+                const gob = goblins.find(g => g.r === r && g.c === c);
+                if (gob) { 
+                    let lvlClass = (gob.power >= 4 && gob.power != 5) ? `gob-lvl-${gob.power}` : ''; 
+                    let selClass = (selectedIdx !== null && goblins[selectedIdx] === gob) ? 'selected' : ''; 
+                    div.innerHTML = `<div class="goblin ${lvlClass} ${selClass}"><div style="position:absolute;top:-8px;background:white;color:black;border-radius:50%;width:15px;height:15px;font-size:0.6rem;display:flex;justify-content:center;align-items:center;font-weight:bold;">${gob.power}</div>${currentLevel===1?'🕶️':currentLevel===2?'👺':'👽'}</div>`; 
+                } 
+                else if (cell === 0) { div.classList.add('empty'); if(!isCellAccessible(r,c)) div.classList.add('inaccessible'); }
+                else if (Array.isArray(cell)) { div.classList.add('rock-amethyst'); div.innerHTML = `<span class="cell-num">${cell[1]}</span>💠`; }
+                else if (cell === "LOOT_A") { div.classList.add('loot-amethyst'); div.innerHTML = "💠"; }
+                else if (cell === "LOOT") { div.classList.add('loot-cell'); div.innerHTML = "💵"; }
+                else if (cell === "GATE") { 
+                    // MOC BRAMY: LVL 3 -> 3, LVL 4 -> 7, LVL 5 -> 5
+                    let gatePower = currentLevel === 1 ? 3 : currentLevel === 2 ? 7 : 5;
+                    div.classList.add('gate-cell'); div.innerHTML = `<span class="cell-num">${gatePower}</span><br><span style="font-size:0.5rem">GATE</span>`; 
+                }
+                else if (cell === "F") { div.classList.add('factory'); div.innerHTML = `🏢`; }
+                else if (typeof cell === 'number' && cell > 0) { div.classList.add('rock'); if(cell >= 6) div.classList.add(`rock-lvl-${cell}`); div.innerHTML = `<span class="cell-num">${cell}</span>`; }
+                else if (cell === "FR_PROD") { div.className = 'cell factory-rubble'; div.innerHTML = `<div style="position:absolute;bottom:0;left:0;width:100%;height:${factoryTimer}%;background:rgba(0,255,65,0.3)"></div><div style="font-size:0.6rem;z-index:2;">COLLECT</div>`; }
+                else if (cell === "B") { div.className = 'cell block'; div.innerText = "X"; }
+                const k = `${r},${c}`;
+                if (cellHP[k] !== undefined && cellHP[k] > 0) {
+                    const workingGoblin = goblins.find(g => g.target && g.target.r === r && g.target.c === c);
+                    if (workingGoblin) {
+                        let maxKey = (cell === "GATE") ? (currentLevel === 1 ? "GATE1" : currentLevel === 2 ? "GATE2" : "GATE3") : (Array.isArray(cell) ? cell[1] : cell);
+                        div.innerHTML += `<div class="mining-bar" style="width:${Math.max(0, ((rockMaxHP[maxKey] - cellHP[k]) / rockMaxHP[maxKey]) * 100)}%"></div>`;
+                    }
+                }
+                grid.appendChild(div);
+            }); });
+            updateWheelButton();
+        }
+
+        setInterval(() => {
+            workshopTimer += 100; if (workshopTimer >= 5000) { workshopTimer = 0; coins += getWorkshopIncome(); saveGame(); }
+            const prog = document.getElementById('workshop-progress'); if(prog) prog.style.width = (workshopTimer / 5000 * 100) + "%";
+            goblins.forEach(g => { 
+                if (g.target) { 
+                    const tr = g.target.r, tc = g.target.c, k = `${tr},${tc}`, val = levelLayout[tr][tc]; 
+                    if (cellHP[k] === undefined) { let maxKey = (val === "GATE") ? (currentLevel === 1 ? "GATE1" : currentLevel === 2 ? "GATE2" : "GATE3") : (Array.isArray(val) ? val[1] : val); cellHP[k] = rockMaxHP[maxKey]; } 
+                    cellHP[k] -= getMiningDamage(g.power, val) / 10; 
+                    if (cellHP[k] <= 0) { 
+                        if (Array.isArray(val)) spawnAmethystLoot(tr, tc); 
+                        else if (val === "GATE") { for(let i=0; i<5; i++) { spawnLoot(levelLayout.length-1, i, "GATE"); delete cellHP[`${levelLayout.length-1},${i}`]; } } 
+                        else if (val === "F") { isFactoryDestroyed = true; levelLayout[tr][tc] = "FR_PROD"; } 
+                        else spawnLoot(tr, tc, val); 
+                        delete cellHP[k]; g.target = null; saveGame(); 
+                    } 
+                } 
+            });
+            if (isFactoryDestroyed && !isFactoryReady) { factoryTimer += 1; if (factoryTimer >= 100) { factoryTimer = 100; isFactoryReady = true; } }
+            render();
+        }, 100);
+
+        function collectFactoryProfit() { if (isFactoryReady) { coins += getFactoryIncome(); isFactoryReady = false; factoryTimer = 0; saveGame(); render(); } }
+        function collectLoot(r, c) { const key = `${r},${c}`; if (lootMap[key]) { coins += lootMap[key]; delete lootMap[key]; levelLayout[r][c] = 0; saveGame(); render(); } }
+        function collectAmethyst(r, c) { const key = `${r},${c}`; if (lootMap[key] !== undefined) { amethysts += lootMap[key]; delete lootMap[key]; levelLayout[r][c] = 0; saveGame(); render(); } }
+        function spawnLoot(r, c, type) { const reward = Math.floor((Math.random() * 0.09 + 0.01) * getGoblinCost() * (type==="F"?7:type==="GATE"?2:type)); levelLayout[r][c] = "LOOT"; lootMap[`${r},${c}`] = reward; }
+        function spawnAmethystLoot(r, c) { levelLayout[r][c] = "LOOT_A"; lootMap[`${r},${c}`] = Math.floor(Math.random() * 5) + 1; }
+        function upgradeWorkshop() { const cost = getWorkshopCost(); if (coins >= cost) { coins -= cost; workshopLevel++; saveGame(); render(); } }
+        function updateWheelButton() { 
+            const btn = document.getElementById('open-wheel-btn'); const lastSpin = localStorage.getItem(WHEEL_TIME_KEY); 
+            if (lastSpin) { 
+                const timeLeft = (parseInt(lastSpin) + WHEEL_COOLDOWN) - Date.now(); 
+                if (timeLeft > 0) { const h = Math.floor(timeLeft / 3600000), m = Math.floor((timeLeft % 3600000) / 60000), s = Math.floor((timeLeft % 60000) / 1000); btn.innerText = `🎰 ${h}:${m}:${s}`; btn.disabled = true; return; } 
+            } 
+            btn.innerText = "🎡 Kasyno"; btn.disabled = false; 
+        }
+        function openWheel() { const lastSpin = localStorage.getItem(WHEEL_TIME_KEY); if (lastSpin && Date.now() < parseInt(lastSpin) + WHEEL_COOLDOWN) return; document.getElementById('wheel-modal').style.display = 'flex'; drawWheel(); }
+        function spinWheel() { 
+            if (isSpinning) return; isSpinning = true; localStorage.setItem(WHEEL_TIME_KEY, Date.now().toString()); 
+            const wheel = document.getElementById('wheel-container'); const rotation = 1800 + Math.random() * 360; wheel.style.transform = `rotate(${rotation}deg)`; 
+            setTimeout(() => { 
+                isSpinning = false; const segment = Math.floor(((360 - (rotation % 360) + 270) % 360) / 36); 
+                const rewards = [ () => spawnGoblin(Math.max(1, Math.max(...goblins.map(g=>g.power),1)-2)), () => applyTimeWarp(300), () => { amethysts += 30 }, () => spawnGoblin(Math.max(1, Math.max(...goblins.map(g=>g.power),1)-1)), () => { coins += getGoblinCost() * 0.32 }, () => { amethysts += 25 }, () => { coins += getGoblinCost() * 0.20 }, () => spawnGoblin(Math.max(...goblins.map(g=>g.power),1)), () => applyTimeWarp(600), () => { coins += getGoblinCost() * 0.49 } ]; 
+                rewards[segment](); document.getElementById('wheel-modal').style.display = 'none'; saveGame(); render(); 
+            }, 4000); 
+        }
+        function applyTimeWarp(seconds) { coins += Math.floor(seconds/5)*getWorkshopIncome(); saveGame(); render(); }
+        function spawnGoblin(power) { for(let r=0; r<2; r++) for(let c=0; c<5; c++) { if (levelLayout[r][c] === 0 && !goblins.some(g => g.r === r && g.c === c)) { goblins.push({ r, c, power, target: null }); render(); return; } } }
+        function buyGoblin() { const cost = getGoblinCost(); if (goblins.length < 7 && coins >= cost) { coins -= cost; goblinsPurchasedCount++; spawnGoblin(1); saveGame(); } }
+        function drawWheel() { 
+            const canvas = document.getElementById('wheel-canvas'); const ctx = canvas.getContext('2d'); const arc = (2 * Math.PI) / 10; const labels = ["🕶️ M-2", "⌛ 5m", "💠 30", "🕶️ M-1", "💵 32%", "💠 25", "💵 20%", "🕶️ MAX", "⌛ 10m", "💵 49%"]; 
+            ctx.clearRect(0,0,340,340); 
+            for (let i = 0; i < 10; i++) { ctx.beginPath(); ctx.fillStyle = i % 2 ? '#1a1a2e' : '#0d47a1'; ctx.moveTo(170, 170); ctx.arc(170, 170, 170, i * arc, (i + 1) * arc); ctx.fill(); ctx.save(); ctx.fillStyle = "white"; ctx.translate(170, 170); ctx.rotate(i * arc + arc / 2); ctx.fillText(labels[i], 100, 5); ctx.restore(); } 
+        }
+        function toggleAmethystSpell() { if (amethysts >= 15) { isAmethystTargeting = !isAmethystTargeting; render(); } }
+        function closeWheel() { if(!isSpinning) document.getElementById('wheel-modal').style.display = 'none'; }
+        loadGame(); render();
+    </script>
+</body>
+</html>
